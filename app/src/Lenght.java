@@ -17,65 +17,50 @@ public class Length {
         this.unit = unit;
     }
 
-    public enum LengthUnit {
-        FEET(12.0),
-        INCHES(1.0),
-        YARDS(36.0),
-        CENTIMETERS(0.393701);
-
-        private final double toInches;
-
-        LengthUnit(double toInches) {
-            this.toInches = toInches;
-        }
+    public double getValue() {
+        return value;
     }
 
-    // Convert to inches (base unit)
+    public LengthUnit getUnit() {
+        return unit;
+    }
+
     private double toBase() {
-        return this.value * this.unit.toInches;
+        return unit.convertToBaseUnit(value);
     }
 
-    // Convert from inches to target unit
-    private static double fromBase(double inches, LengthUnit targetUnit) {
-        return round(inches / targetUnit.toInches);
-    }
-
-    private static double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
-    }
-
-    // UC5
     public Length convertTo(LengthUnit targetUnit) {
-        if (targetUnit == null) throw new IllegalArgumentException("Target unit null");
-
+        if (targetUnit == null) {
+            throw new IllegalArgumentException("Target unit cannot be null");
+        }
         double base = toBase();
-        double converted = fromBase(base, targetUnit);
-        return new Length(converted, targetUnit);
+        double result = targetUnit.convertFromBaseUnit(base);
+        return new Length(round(result), targetUnit);
     }
 
-    // UC6 (same as before)
-    public Length add(Length that) {
-        return add(that, this.unit);
+    public Length add(Length other) {
+        return add(other, this.unit);
     }
 
-    // ✅ UC7: Add with target unit
-    public Length add(Length that, LengthUnit targetUnit) {
-        if (that == null || targetUnit == null) {
+    public Length add(Length other, LengthUnit targetUnit) {
+        if (other == null || targetUnit == null) {
             throw new IllegalArgumentException("Invalid input");
         }
 
-        double sumInBase = this.toBase() + that.toBase();
-        double result = fromBase(sumInBase, targetUnit);
+        double sumBase = this.toBase() + other.toBase();
+        double result = targetUnit.convertFromBaseUnit(sumBase);
 
-        return new Length(result, targetUnit);
+        return new Length(round(result), targetUnit);
     }
 
-    // Equality check (based on inches)
+    private double round(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Length)) return false;
-
         Length that = (Length) o;
         return Math.abs(this.toBase() - that.toBase()) < EPSILON;
     }
@@ -87,6 +72,6 @@ public class Length {
 
     @Override
     public String toString() {
-        return String.format("%.2f %s", value, unit);
+        return String.format("Quantity(%.2f, %s)", value, unit);
     }
 }
